@@ -1,0 +1,465 @@
+---
+title: "Evidencia3. Modelos Bayesianos"
+author: 
+  - Alejandra Velasco Zárate A01635453
+  - José Antonio Juárez Pacheco A00572186
+  - Jose Carlos Yamuni Contreras A01740285
+  - Juan Manuel Hernández Solano A00572208
+  - Mayra Sarahí De Luna Castillo A01635774
+date: "09/01/2023"
+execute: 
+  cache: true
+format: html
+editor: visual
+---
+
+## Abstract
+
+Este reporte se enfoca en la aplicación de un modelo bayesiano para abordar el problema del crecimiento de la población de aligátores a lo largo del tiempo. Se presenta una introducción contextual tanto sobre la situación de estos reptiles como sobre los fundamentos teóricos de los modelos bayesianos, el estimador bayesiano y las cadenas de Markov. El modelo propuesto asume que la población de aligátores sigue una distribución normal con una media determinada por un modelo logístico de crecimiento y una varianza constante. Se utiliza un enfoque de regresión no lineal para modelar los datos poblacionales a lo largo de los años. Para poder implementar el modelo se definen las distribuciones priors para los parámetros mediante la asunción de distribuciones normales con hiperparámetros mínimos, buscando mantenerlas poco informativas y a continuación se emplea un enfoque bayesiano que involucra la función de la media y las distribuciones a priori de los parámetros, utilizando cadenas de Markov para la aproximación. El análisis del modelo incluye un resumen de estadísticas descriptivas para evaluar su rendimiento. Además, se realiza una representación gráfica de los datos utilizando la "Mean Posterior function" para observar cómo se ajusta el modelo bayesiano a la población de aligátores a lo largo del tiempo y se calculan bandas de credibilidad para proporcionar flexibilidad al modelo y permitir una adaptación más precisa al crecimiento anual de la población. En última instancia, se analizan y discuten los resultados obtenidos, lo que demuestra la eficacia de este modelo bayesiano para comprender y modelar el crecimiento de la población de aligátores y su utilidad en situaciones de modelización científica.
+
+## Introducción
+
+Los humedales y cuerpos de agua del sureste de los Estados Unidos albergan una fascinante criatura que ha capturado la atención de biólogos, ecologistas y entusiastas de la vida silvestre por igual: el aligátor americano (Alligator mississippiensis). A lo largo de la historia, la población de estos reptiles ha experimentado fluctuaciones notables, desde la preocupación por su estado de conservación en la década de 1960 hasta su asombrosa recuperación en las décadas siguientes. En 1967, el aligátor americano fue catalogado como una especie amenazada, enfrentando amenazas significativas a su hábitat y a su existencia misma. Sin embargo, gracias a la implementación de medidas de conservación y protección, el panorama cambió drásticamente. Para 1987, el esfuerzo conjunto de científicos, agencias gubernamentales y comunidades locales había llevado a un aumento sustancial en sus números, lo que resultó en su reclasificación como una especie no amenazada. Este éxito en la preservación del aligátor americano resalta la importancia de la comprensión profunda de las dinámicas poblacionales y los factores que influyen en ellas.
+
+Uno de los enfoques más relevantes en la investigación de la dinámica de poblaciones es el uso de modelos matemáticos, que permiten capturar las interacciones complejas entre los individuos de una especie y su entorno. Un modelo particularmente efectivo es el modelo logístico de crecimiento, el cual se basa en la idea de que la tasa de crecimiento relativo disminuye a medida que la población se acerca a la capacidad de carga del ecosistema. En este contexto, este trabajo se sumerge en el estudio de la población de aligátores americanos, utilizando un enfoque novedoso: la combinación de modelos de regresión no lineal y ecuaciones diferenciales. Estos modelos no solo permiten analizar la relación entre variables clave, sino que también se adentran en las sutilezas de la dinámica poblacional a través de la resolución de ecuaciones diferenciales que describen el cambio en el tiempo. En particular, se explorará cómo un modelo de regresión no lineal puede ser construido y aplicado para modelar la distribución normal de la población de aligátores, con su media dictada por el modelo logístico de crecimiento y una varianza constante. A medida que se avance en esta investigación, se espera arrojar resultados sobre las complejas interacciones que gobiernan la dinámica de la población de aligátores americanos y, al mismo tiempo, demostrar cómo la combinación de herramientas matemáticas puede enriquecer nuestra comprensión de la ecología de especies emblemáticas en nuestros ecosistemas acuáticos.
+
+## Marco Teórico
+
+### Modelos Bayesianos
+
+La aplicación de modelos bayesianos sigue el esquema general de la estadística bayesiana, su enfoque bayesiano representa toda la incertidumbre con variables aleatorias y sus afirmaciones son congruentes con la teoría de la probabilidad. Un modelo bayesiano permite combinar información previa, con nueva información para obtener una estimación más precisa y actualizada de la probabilidad de un evento o el valor de un parámetro. Su base es el Teorema de Bayes, que define como *posterior* la combinación de la experiencia pasada con los datos observados para formar un estado actual de conocimiento. Sea $y = (y_1,y_2,...,y_n)$ una muestra aleatoria de algún modelo $f(y|\theta)$ con parámetros desconocidos $\theta = (\theta_1, ..., \theta_n)$ y $\theta \in \varTheta$, entonces la *distribución* *posterior* está dada por:
+
+$$
+p(\theta | y) = \frac{f(y | \theta) p(\theta)}{f(y)}=\frac{f(y|\theta)p(\theta)}{\int_\varTheta f(y | \theta) p(\theta)d\theta}
+$$
+
+donde $f(y)$ es la distribución incondicional de los datos (prior predective) y $p(\theta)$ es la distribucion a priori, $f(y|\theta)$ es la información contenida en los datos sobre $\theta$ (verosimilitud).
+
+Para poder escoger la distribución prior se lleva a cabo el proceso de extraer conocimiento previo que permita formulación de una prior que represente esa información de la forma más precisa posible. Para esto, la distribución tiene que ser lo menos informativa posible.
+
+Como la *prior predective* no depende de $\theta$ el teorema de Bayes se puede reescribir como:
+
+$$
+p(\theta \: | \: y) \propto f(y\: |\: \theta) p(\theta)
+$$ Para poder encontrar la *posterior*, se puede encontrar $f(y\:|\:\theta) p(\theta)$ para obtener una distribución que pueda ser reconocida en el **kernel** de alguna distribución, por ejemplo, kernel normal: $\exp\{{-\frac{(x-\mu)2}{2\sigma^2}}\}$ . Encontrando esta distribución se tiene que resumir la información de la *posterior* con el mejor número, es decir, decidir qué valor de $\theta$ minimiza (maximiza) una función de pérdida (utilidad) dada.
+
+### Estimador Bayesiano
+
+Algunas de estas funciones de pérdida de representan como $L(\theta,\alpha)$, que es la pérdida asociada al usar $\alpha$ como estimador cuando $\theta$ es el valor real del parámetro. Algunas funciones de pérdida comunes son:
+
+-   Pérdida cuadrática: $L(\theta, \alpha) = (\theta-\alpha)^2$
+
+-   Error absoluto: $L(\theta, \alpha) = |\theta - \alpha|$
+
+-   Pérdida cero-uno: $L(\theta, \alpha) = \mathbb{I}_{\{\alpha\neq \theta\}}$
+
+Para el modelo bayesiano, suele utilizarse el estimador bayesiano, que minimiza el valor esperado de la función de pérdida respecto a la posterior:
+
+$$
+\hat\theta=\min_{\alpha \in \varTheta}\mathbb{E}_{\theta|y}[L(\theta, \alpha)]
+$$
+
+Entonces:
+
+-   Pérdida cuadrática: $\hat{\theta}=\mathbb{E}(\theta\:|\:y)$
+
+-   Error absoluto: $\hat{\theta}=Mediana(\theta\:|\: y)$
+
+-   Pérdida cero-uno: $\hat{\theta} = \arg \max_{\theta} p(\theta \: | \: y)$
+
+Encontrando los mejores parámetros mediante el estimador, se obtiene un modelo bayesiano y con esto se pueden obtener predicciones para observaciones futuras bajo el marco bayesiano. Sea $\tilde{y}$ una observación futura, la distribución posterior predective de $\tilde{y}$ dado $y$:
+
+$$
+f(\tilde{y}\:|\:y)=\int_{\Theta}f(\tilde{y}\: |\: y, \theta)p(\theta\:|\:y)d\theta = \mathbb{E}_{\theta|y}[f(\tilde{y}\:|\:\theta)]
+$$
+
+El problema de esta forma de hacer una predicción es que en muy pocos casos, se puede encontrar analíticamente $p(\theta\:|\:y)$, por lo que se recurre a aproximaciones: asintóticas, integración numérica y Métodos Monte Carlo.
+
+### Métodos Monte Carlo
+
+Este método se enfoca en aproximar la posterior generando muestras (simulaciones) de la distribución posterior y luego usar esas muestras para aproximar cualquier cantidad de interés, por ejemplo, la media. Si $\theta^{(1)}$,$\theta^{(2)}$, ..., $\theta^{(S)}$ es un conjunto de simulaciones de la posterior, se puede aproximar $\mathbb{E}(\theta \: |\: y)$ de la siguiente forma:
+
+$$
+\mathbb{E}(\theta \: |\: y) \approx \frac{1}{S}\sum_{s=1}^S \theta^{(s)}
+$$
+
+Existen métodos comunes como el de aceptación-rechazo, importance sampling, sampling importance sampling y Markov Chain Monte Carlo (MCMC).
+
+### Markov Chain Monte Carlo
+
+Este método se basa en construir una cadena de Markov que eventualmente va a converger a la distribución estacionaria, en el caso de un modelo bayesiano, es la distribución posterior. Lo que diferencia a este método es que muestrea directamente de la posterior pero un aspecto negativo es que las observaciones están correlacionadas. Los métodos de inferencia que utiliza la cadena de Markov son: Gibbs sampler y Metropolis-Hastings.
+
+### Gibbs sampler
+
+El método de Gibbs rompe el problema de muestrear una distribución en muchas dimensiones a muestrear de varias distribuciones condicionales de baja dimensión. Se tienen los valores iniciales para los parámetros: $\theta^{(0)}=(\theta_1^{(0)}, …, \theta_p^{(0)})$ que se muestrea cada observación de su respectiva **distribución full conditional**:
+
+$$
+p(\theta_j \: |\: \theta_1, ..., \theta_{j-1}, \theta_{j+1}, ..., \theta_p, \: y), \:\:\:\:\: j = 1, ..., p
+$$
+
+Y para una $S$ suficientemente grande:
+
+$$
+(\theta^{(1)}, ..., \theta^{(S)}) \sim p(\theta\: |\: y)
+$$
+
+Así es como se puede aproximar $p(\theta \: |\: y)$.
+
+## Metodología y aplicación
+
+### 1. Asumiendo que la población de aligátores sigue una distribución normal, con media dictada por el modelo logístico de crecimiento y varianza constante, ¿cómo se define un modelo de regresión no lineal?
+
+$$
+\frac{dP}{dt} = kP(1-\frac{P}{K})
+$$
+
+donde $P$ es la población al tiempo $t$, $K$ es la capacidad de carga (el tamaño más grande de una población) y $k$ es la tasa de crecimiento.
+
+$$
+\int\frac{dP}{P(1-\frac{P}{K})}=\int kdt
+$$
+
+Resolviendo la integral por fracciones parciales:
+
+$$
+\int\frac{A}{P}dP + \int\frac{B}{(1-\frac{P}{K})} dP=\int kdt
+$$
+
+$$
+\frac{A}{P} + \frac{B}{(1-\frac{P}{K})}=1
+$$
+
+$$
+A = 1 \:\:\:\:\:\:\:\:  B = \frac{1}{K}
+$$
+
+$$
+\int \frac{1}{P}dP - \int \frac{\frac{-1}{K}}{1-\frac{P}{K}}dP = \int kdt
+$$
+
+Se despeja para $P$:
+
+$$
+\ln|P|-\ln|1-\frac{P}{K}| = kt+ C
+$$
+
+$$
+\ln|\frac{P}{1-\frac{P}{K}}|= kt + C
+$$
+
+Se elevan ambas partes a la exponencial para eliminar $\ln$.
+
+$$
+\frac{P}{1-\frac{P}{K}} = C_1e^{kt}
+$$
+
+donde $C_1$ es $e^C$ .
+
+$$
+P = C_1 e^{kt}(1-\frac{P}{K})
+$$
+
+$$
+P = C_1 e^{kt}-\frac{P}{K}C_1 e^{kt} 
+$$
+
+$$
+P(1+ \frac{C_1 e^{kt}}{K}) = C_1 e^{kt}
+$$
+
+$$
+P(t) = \frac{C_1Ke^{kt}}{K+C_1 e^{kt}}
+$$
+
+Para generalizar toda la ecuación y encontrar $C_1$ en términos de $P$ y $K$, se asume que $P(0)=P_0$ .
+
+$$
+P_0 = \frac{C_1K}{K+C_1}
+$$
+
+$$
+P_0K+P_0C_1= C_1K
+$$
+
+$$
+C_1K-P_0C_1 = P_0K
+$$
+
+$$
+C_1(K-P_0)=P_0K
+$$
+
+$$
+C_1 =\frac{P_0K}{K-P_0}
+$$
+
+$$
+P(t) = \frac{\frac{P_0K}{K-P_0}Ke^{kt}}{K+\frac{P_0K}{K-P_0} e^{kt}}
+$$
+
+$$
+P(t)=\frac{\frac{P_0K^2e^{kt}}{K-P_0}}{\frac{K^2-KP_0+P_0K e^{kt}}{K-P_0}}
+$$
+
+$$
+P(t)=\frac{P_0K^2e^{kt}}{{K^2-KP_0+P_0K e^{kt}}}
+$$
+
+Factorizando $K$, el modelo de regresión no lineal para el crecimiento de la población tiene la siguiente forma:
+
+$$
+P(t)=\frac{P_0Ke^{kt}}{{K-P_0+P_0 e^{kt}}}
+$$ Se necesita eliminar la exponencial para practicidad en el modelo bayesiano, para esto:
+
+$$
+P(t)=\frac{(P_0Ke^{kt})\frac{1}{e^{kt}}}{(K-P_0+P_0 e^{kt})\frac{1}{e^{kt}}}
+$$
+
+$$
+P(t)=\frac{P_0K}{\frac{K}{e^{kt}}-\frac{P_0}{e^{kt}}+P_0}
+$$
+
+Agrupando y simplificando, el modelo de crecimiento logístico final queda de la siguiente forma:
+
+$$
+P(t)=\frac{P_0K}{(K-P_0)e^{-kt}+P_0}
+$$
+
+### 2. ¿Cuáles serían las prior para los parámetros?
+
+Definir parámetros prior en un modelo bayesiano implica establecer distribuciones de probabilidad iniciales para los parámetros antes de incorporar los datos observados en la base de datos. Asumiendo que la población de aligátores tiene una distribución normal y su media $\mu$ esta dada por la ecuación de la parte 1 $P(t)$, los parámetros son: $\theta = (P_0,K,k,\tau)$. Para estos parámetros se asumen las siguientes distribuciones:
+
+$$
+P_0 \sim Normal(a,b)
+$$
+
+$$
+K \sim Normal(c,d)
+$$
+
+$$
+k \sim Normal(e,f)
+$$
+
+donde cada una de estas distribuciones fueron truncadas para que sean números reales positivos debido a la naturaleza de los parámetros y $a, b, c, d, e$ y $f$ son hiperparámetros para la distribución.
+
+$$
+\tau \sim Gamma(g,h)
+$$
+
+donde $g$ y $h$ son hiperparámetros y $\tau=\frac{1}{\sigma^2}$ .
+
+### 3. Modelo bayesiano
+
+#### 3.1 Datos
+
+La base de datos contiene la información de la población de los aligátores del año 1967 al año 1867, siendo el año 1967 el tiempo 1 y así sucesivamente hasta el tiempo 21 correspondiente al año 1987 y es la que se usará para el modelo bayesiano.
+
+```{r}
+#| echo: false
+data <- read.csv("alligator.csv")
+data <- cbind(data, "time" = c(1:21))
+head(data)
+```
+
+```{r}
+#| echo: false
+y<-data$y
+```
+
+```{r}
+#| echo: false
+X<-as.matrix(model.matrix(~., data = data))
+```
+
+#### 3.2 Implementación del modelo bayesiano
+
+La implementación del modelo bayesiano utilizando el paquete JAGS de R para la modelación de la problación de aligátores se hace de la siguiente forma:
+
+```{r}
+#| echo: false
+suppressPackageStartupMessages(library(rjags))
+```
+
+```{r}
+model_string<-"model{
+  ## Modelo
+  for(i in 1:n){
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i]=(K*p0)/((K-p0)*exp(-k*t[i])+p0)
+  }
+
+  ## Priors
+  p0 ~ dnorm(a,b)T(0, )
+  K ~ dnorm(c,d)T(0, )
+  k ~ dnorm(e,f)T(0, )
+  tau ~ dgamma(g,h)
+  sigma2 = 1/tau
+}"
+```
+
+donde $mu[i]$ es el modelo de crecimiento logístico de la parte 1 y las priors son las distribuciones definidas en la parte 2.
+
+```{r}
+#| echo: false
+a<-0.001
+b<-0.001
+c<-0.001
+d<-0.001
+e<-0.001
+f<-0.001
+
+g<-0.001
+h<-0.001
+```
+
+```{r}
+#| echo: false
+data_list<-list(y = y, n = length(y), g = g, h = h, e = e, f = f, c = c, d = d, a = a, b = b, t = data$time)
+```
+
+```{r}
+#| echo: false
+output_capturado <- capture.output({
+model<-jags.model(textConnection(model_string), data = data_list, n.chains = 3)
+})
+```
+
+Después de definir los hiperparámetros para los parámetros haciendo que estas distribuciones sean las menos descriptivas posibles y conectar el modelo con los datos y los hiperparámetros se obtiene un modelo bayesiano.
+
+```{r}
+#| echo: false
+output_capturado <- capture.output({
+update(model, 100000)
+})
+```
+
+```{r}
+#| echo: false
+output_capturado <- capture.output({
+res<-coda.samples(model, variable.names = c("k", "K", "p0", "sigma2"), n.iter = 100000)})
+```
+
+### 4. Estadística descriptiva del modelo y los parámetros
+
+```{r}
+#| echo: false
+summary(res)
+```
+
+En el resumen del modelo se muestra las estadísticas descriptivas los resultado del modelo bayesiano implementado en la parte 3, que ha sido ajustado mediante algún método de inferencia bayesiana. Este resumen estadístico se genera a partir de una cadena de Markov Monte Carlo (MCMC) y proporciona información sobre la distribución posterior de los parámetros del modelo. Las partes muestran las estadísticas descriptivas para cada parámetro:
+
+-   **La media empírica (Mean)**: estos valores representan la estimación promedio de cada parámetro en función de las muestras generadas por el modelo bayesiano. Este quiere decir que la media empírica de la capacidad de carga $K$ es de aproximadamente $246$, la de la tasa de crecimiento de la población de aligátores $k$ es de $0.29$ y la media de la población inicial de los aligatóres es de $3$.
+
+-   **Desviación estándar empírica (SD)**: índica la dispersión de los valores alrededor de la media empírica. Cuanto mayor sea esta desviación estándar, mayor será la dispersión, es decir, para el parámetro $K$ la dispersión alrededor de la media empírica es de aproximadamente $12.8$, esto se refiere a la dispersión de las diferentes capacidad de cargas calculados en el modelo.
+
+    -   Lo que se busca es que la dispersión y por ende la desviación de cada parámetro sea lo menor posible, ya que esto permite un mejor rendimiento del modelo bayesiano. En este caso la dispersión de los datos no es tan grande para los parámetros, esto es bueno ya que la media empírica se ajusta bien.
+
+-   **Error estándar Naive (Naive SE)**: se trata de una estimación del error estándar de la media empírica. Si el valor es pequeño, la precisión de la estimación de la media será mayor. Esto se calcula con la desviación estándar y el tamaño de la muestra.
+
+    -   Entre menor sea esta medida estadística para cada parámetro el modelo tendrá mejor rendimiento, en este caso, todos los valores de 'Naive SE' son muy pequeños, lo cual indica que el modelo bayesiano para predecir el crecimiento de aligátores se ajusta bien.
+
+-   **Error estándar de series temporales (Time-series SE)**: esta métrica proporciona una estimación del error estándar de la media, que tiene en cuenta la posible correlación entre las muestras en una serie temporal, ya que estas muestras no siempre son independientes entre sí, estos valores generados en un paso pueden estar correlacionados con los valores generados en pasos anteriores. Por ejemplo para $K$ el error estándar de la media considerando la serie temporal es de aproximadamente $0.22$.
+
+    -   Al igual que la desviación estándar empírica, entre más pequeño indica una mayor precisión en la estimación de la media. En este caso, no se tienen errores estándar muy grandes lo que significa que el modelo es bueno.
+
+-   **Cuantiles**: los cuantiles representan los valores que dividen la distribución posterior en percentiles específicos. Los cuantiles son útiles para comprender la variabilidad en los parámetros del modelo y para construir intervalos de confianza bayesianos. Para el parámetro $K$, el intervalo de credibilidad entre el $2.5\%$ y $97.5\%$ (un intervalo del $95\%$ de confianza) es $[218,268]$.
+
+Observando los valores de la estadísticas descriptivas se puede concluir que el modelo para predecir el crecimiento de aligátores tiene un buen rendimiento y se puede comprender el comportamiento de los parámetros con toda la información proporcionada en el resumen. Esta información se puede usar para obtener estimaciones puntuales de los parámetros, evaluar la variabilidad y construir intervalos de credibilidad para ellos.
+
+### 5. Mean Posterior Function
+
+En un modelo bayesiano la 'Mean Posterior Function' se refiere a la función que representa la estimación de la media de la distribución posterior de un conjunto de variables aleatorias, dado un conjunto de datos observados y un modelo bayesiano. Esta función de la media posterior para el problema de los aligatóres es la descrita en la parte 1, el modelo de crecimiento logístico. Para realizar esta función se extrae el vector de parámetros, que en este caso son solo 4 , las variables: $K$, $k$, $P_0$ y $\sigma^2$. Después se utiliza la función de crecimiento logístico para sacar la media $\mu$ que es que predice el comportamiento de los datos.
+
+```{r}
+#| echo: false
+beta <- rbind(res[[1]][, 1:4], res[[2]][, 1:4], res[[3]][, 1:4])
+```
+
+```{r}
+#| echo: false
+t_est <- seq(1, 21, by=0.01)
+muj <- c()
+mus <- c()
+
+for (i in t_est) {
+  for (j in 100000){
+    muj <- c(muj, (beta[j,1]*beta[j,3])/((beta[j,1]-beta[j,3])*exp(-1*beta[j,2]*i)+beta[j,3]))
+  }
+  mus <- c(mus, mean(muj))
+  muj <-c()
+}
+
+print("Los primeros datos de la población utilizando la Mean Posterior Function son: ")
+head(mus)
+```
+
+```{r}
+#| echo: false
+print("Y los últimos:")
+tail(mus)
+```
+
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 7
+plot(data$time, data$y, main = "Crecimiento poblacional de aligátores\nMean Posterior Function",
+     xlab = "Tiempo (años)", ylab = "Cantidad de aligátores",
+     pch = 19, frame = FALSE)
+lines(t_est, mus, col = 3 , lwd = 3, pch = 19)
+```
+
+En esta gráfica, los puntos negros son la cantidad de los aligátores en el tiempo ($t \in [1,21]$) de la base de datos mostrada en la parte 3.1. La línea verde es la función de Media Posterior, que es la predicción de los datos utilizando el modelo bayesiano. Se puede observar que el modelo bayesiano se ajusta muy bien a los datos, con solo la distribución a priori y la función de crecimiento logístico se construyó un modelo que puede predecir el crecimiento de la problación de aligátores. Este rendimiento puede sustentar los análisis de la parte 4 (estadística descriptiva), donde se observan buenos valores para las métricas de cada parámetro.
+
+### 6. Representación de la incertidumbre
+
+Bajo el enfoque Bayesiano toda la incertidumbre está representada con variables aleatorias. La función Media Posterior también es una variable aleatoria por lo que se puede calcular intervalos de credibilidad para la población de aligátores en cierto tiempo. Una forma de hacer esto es con los intervalos de credibilidad utilizando los cuantiles. Entre $2.5\%$ y el $97.5\%$ se obtiene una banda de credibilidad del $95\%$. .
+
+```{r}
+#| echo: false
+q1 <- c()
+q2 <- c()
+for (i in t_est){
+  pred <- (beta[,1]*beta[,3])/((beta[,1]-beta[,3])*exp(-1*beta[,2]*i)+beta[,3])
+  a <- quantile(pred, 0.025)
+  b <- quantile(pred, 0.975)
+  q1 <- c(q1,a)
+  q2 <- c(q2,b)
+}
+```
+
+```{r}
+#| echo: false
+#| fig-width: 9
+#| fig-height: 7
+# Dibujar un polígono para sombrear el área entre los cuantiles
+plot(data$time, data$y, main = "Crecimiento poblacional de aligátores\nIncertidumbre",
+     xlab = "Tiempo (años)", ylab = "Cantidad de aligátores",
+     pch = 19, frame = FALSE)
+polygon(c(t_est, rev(t_est)), c(q1, rev(q2)), col = "lightcyan2", border=NA)
+lines(t_est, q1, col = "darkgreen", lwd = 2, lty = 2)  # Cuantil inferior
+lines(t_est, q2, col = "darkred", lwd = 2, lty = 2)   # Cuantil superior
+lines(t_est, mus, col = "blue", lwd = 2, pch = 19)
+
+
+# Leyenda
+legend("topleft", legend = c("Mean Posterior Function", "Cuantil Inferior", "Cuantil Superior"),
+       col = c("blue", "darkgreen", "darkred"), lty = c(1, 2,2), lwd = c(3, 2, 2))
+```
+
+Se puede observar claramente la Mean Posterior Function y sus intervalos de credibilidad. En la gráfica de la Mean Posterior Function de la parte 5, se observaban unos datos que aunque sí se ajustaban a la curva exponencial, sobresalían un poco de la función mientras el tiempo aumentaba. Con las bandas de credibilidad se observa que la mayoría de los datos reales están dentro de este intervalo, lo cual es bueno para el rendimiento. De esta manera se puede representar la incertidumbre de la función y se puede visualizar de una manera concreta y sencilla.
+
+## Resultados
+
+Después de implementar el modelo bayesiano, las estadísticas descriptivas, la gráfica de la función media posterior y las bandas de credibilidad se pueden analizar de manera concreta los resultados. Observando las gráficas de 'Mean Posterior Function' y la de 'Incertidumbre' se concluye que el modelo bayesiano que ajustaba los datos de la población de aligátores con una distribución normal con una media dictada por el modelo logístico de crecimiento y una varianza constante tiene un rendimiento muy bueno. La manera en la que este modelo se ajusta a los datos utilizados en el reporte y cómo los intervalos de credibilidad hacen flexible está adaptación, hacen posible que la población de aligátores se describa y se modele de manera sorprendentemente precisa bajo un enfoque bayesiano. Este análisis visual sustenta los resultados de las métricas estadísticas descriptivas que arrojó el modelo, ya que todos lo parámetros de la función media tenían desviaciones estándar relativamente pequeños y errores menores a $0$. Con todo este conjunto de resultados, se remata que el modelo bayesiano implementado en este reporte para ajustar el crecimiento poblacional de aligátores es verdaderamente confiable gracias a su preciso rendimiento y permite realizar inferencias utilizando un enfoque bayesiano como base.
+
+## Conclusiones
+
+La implementación de un modelo bayesiano para ajustar el crecimiento de la población de aligatores a través del tiempo ha demostrado ser altamente efectiva y valiosa. Al asumir que el crecimiento de estos reptiles tenía la forma de la ecuación de crecimiento logístico, el análisis bayesiano arrojó resultados esperanzadores, respaldados por sólidas métricas estadísticas. La 'Mean Posterior Function' ha proporcionado una representación clara de cómo el modelo bayesiano se ajusta a los datos de población de aligátores utilizados en este estudio. La identificación de intervalos de credibilidad ha permitido discernir aquellos puntos de datos que se ajustan de manera óptima y aquellos que presentan discrepancias con la función posterior media. Esta capacidad de adaptación a datos diversos resalta la flexibilidad y la capacidad de adaptación del enfoque bayesiano.
+
+Este trabajo ha permitido conocer la utilidad de los modelos bayesianos como herramientas efectivas para modelar situaciones de crecimiento de población y obtener inferencias valiosas sobre las poblaciones de aligátores. La naturaleza probabilística de los modelos bayesianos permite manejar la incertidumbre de manera explícita y capturar la variabilidad inherente en los datos. Además, la incorporación de información previa o conocimientos expertos en la forma de distribuciones previas permite una modelización más precisa y adaptada a las condiciones específicas. En resumen, este estudio demuestra que el enfoque bayesiano es una poderosa herramienta para comprender y predecir el crecimiento de la población de aligatores y puede aplicarse de manera efectiva para abordar una amplia gama de problemas de modelización en ecología y biología.
+
+## Referencias
+
+Garrido, J. (2023). Modelos Bayesianos. \[PDF\].
