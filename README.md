@@ -2,7 +2,7 @@
 ## General Information
 In 1967, the American alligator was listed as a threatened species due to threats to its habitat and survival. However, thanks to conservation efforts, by 1987 its population had increased significantly and it was reclassified as non-threatened. This success highlights the importance of understanding population dynamics.
 
-This project uses a Bayesian model combined with a logistic growth model and differential equations to analyze and predict the population dynamics of alligators over 20 years. The model assumes that the population follows a normal distribution, with a mean determined by a logistic model and a constant variance. A non-linear regression approach and Markov chains are used to approximate the population dynamics.
+This project uses a Bayesian model combined with a logistic growth model and differential equations to analyze and predict the population dynamics of alligators over 20 years in R. The model assumes that the population follows a normal distribution, with a mean determined by a logistic model and a constant variance. A non-linear regression approach and Markov chains are used to approximate the population dynamics.
 
 # Theoretical Framework
 **Bayesian Models**: Bayesian models are based on Bayes' Theorem, which combines prior information and observed data to estimate probabilities.
