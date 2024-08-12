@@ -20,5 +20,6 @@ Metropolis-Hastings: Provides proposals and accepts or rejects them based on an 
 
 # R
 R version 4.0 or higher
+
 RStan package for Bayesian inference (rjags)
 
